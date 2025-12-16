@@ -1,4 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_control
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, View
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -9,7 +11,6 @@ from .models import Client, Message, Mailing, MailingAttempt
 from .forms import ClientForm, MessageForm, MailingForm
 
 
-# Клиенты
 class ClientListView(ListView):
     model = Client
     paginate_by = 20
@@ -32,7 +33,6 @@ class ClientDeleteView(DeleteView):
     success_url = reverse_lazy('clients-list')
 
 
-# Сообщения
 class MessageListView(ListView):
     model = Message
     paginate_by = 20
@@ -55,7 +55,6 @@ class MessageDeleteView(DeleteView):
     success_url = reverse_lazy('messages-list')
 
 
-# Рассылки
 class MailingListView(ListView):
     model = Mailing
     paginate_by = 20
@@ -78,7 +77,6 @@ class MailingDeleteView(DeleteView):
     success_url = reverse_lazy('mailings-list')
 
 
-# Главная страница
 class HomePageView(TemplateView):
     template_name = 'mailing_app/home.html'
 
@@ -98,7 +96,6 @@ class HomePageView(TemplateView):
         return context
 
 
-# Запуск рассылки вручную
 class MailingSendView(View):
     def get(self, request, pk):
         mailing = get_object_or_404(Mailing, pk=pk)
@@ -115,7 +112,7 @@ class MailingSendView(View):
                 send_mail(
                     subject=message_obj.subject,
                     message=message_obj.body,
-                    from_email=None,  # Используется DEFAULT_FROM_EMAIL
+                    from_email=None,
                     recipient_list=[client.email],
                     fail_silently=False,
                 )
@@ -145,12 +142,15 @@ class MailingSendView(View):
 
             data['total_mailings'] = mailings.count()
 
-            # Успешные/неуспешные попытки
             attempts = MailingAttempt.objects.filter(mailing__in=mailings)
             data['success_attempts'] = attempts.filter(status='Успешно').count()
             data['failed_attempts'] = attempts.filter(status='Не успешно').count()
 
-            # Кол-во отправленных сообщений - суммарно успешных попыток
             data['messages_sent'] = data['success_attempts']
 
             return data
+
+
+@method_decorator(cache_control(public=True, max_age=300), name='dispatch')
+class StatisticsView(LoginRequiredMixin, TemplateView):
+    template_name = 'mailings/statistics.html'

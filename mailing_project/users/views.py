@@ -1,8 +1,4 @@
-from msilib.schema import ListView
-
-from django.views.generic import UpdateView
-
-
+from django.views.generic import UpdateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
@@ -14,7 +10,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from .models import CustomUser
 from django.contrib.auth import login
-
 from ..mailing_app.models import Client
 
 
@@ -27,7 +22,7 @@ class RegisterView(View):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = False  # Требуем подтверждения email
+            user.is_active = False
             user.save()
             current_site = get_current_site(request)
             subject = 'Подтверждение регистрации'
