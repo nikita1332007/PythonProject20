@@ -2,8 +2,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, View
-from django.urls import reverse_lazy,resolve
-from django.shortcuts import get_object_or_404, redirect,reverse
+from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect, reverse, render
 from django.utils import timezone
 from django.contrib import messages
 from django.core.mail import send_mail

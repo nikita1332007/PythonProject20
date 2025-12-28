@@ -10,7 +10,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from .models import CustomUser
 from django.contrib.auth import login
-from ..mailing_app.models import Client
+from mailing_app.models import Client
 
 
 class RegisterView(View):

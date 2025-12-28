@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Главная страница</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .stats {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .timeline {
+            font-family: monospace;
+            background-color: #f0f0f0;
+            padding: 10px;
+            display: inline-block;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Главная страница</h1>
+
+    <div class="stats">
+        <strong>Общее количество всех созданных рассылок:</strong> {{ total_mailings }}
+    </div>
+
+    <div class="stats">
+        <strong>Количество активных рассылок:</strong> {{ active_mailings }}
+
+        <div class="timeline">
+            Время: [----Прошлое----] [{{ start_time }}]=====РАБОТА=====[{{ end_time }}] [----Будущее----]
+        </div>
+        <div>
+            Статус рассылки: <em>Запущена</em>
+        </div>
+    </div>
+
+    <div class="stats">
+        <strong>Количество уникальных получателей:</strong> {{ total_recipients }}
+    </div>
+</body>
+</html>
