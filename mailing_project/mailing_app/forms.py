@@ -1,8 +1,7 @@
 from django import forms
-
 from django.utils import timezone
+from .models import Client, Message, Mailing
 
-from mailing_project.mailing_app.models import Client, Message, Mailing
 
 
 class ClientForm(forms.ModelForm):

@@ -1,11 +1,13 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
-from mailing_project.mailing_project import settings
+
 
 
 class Client(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='clients')
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=255)
     comment = models.TextField(blank=True)
@@ -23,6 +25,7 @@ class Message(models.Model):
 
 
 class Mailing(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mailings')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
@@ -50,6 +53,10 @@ class Mailing(models.Model):
         return f'Рассылка #{self.pk} ({self.status})'
 
 
+    def __str__(self):
+        return f'Рассылка #{self.pk} ({self.status})'
+
+
 class MailingAttempt(models.Model):
     STATUS_CHOICES = [
         ('Успешно', 'Успешно'),
@@ -63,10 +70,3 @@ class MailingAttempt(models.Model):
 
     def __str__(self):
         return f'Попытка #{self.pk} рассылки #{self.mailing.pk} – {self.status} в {self.attempt_time}'
-
-
-class Client(models.Model):
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='clients')
-
-class Mailing(models.Model):
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mailings')
