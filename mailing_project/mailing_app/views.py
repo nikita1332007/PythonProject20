@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control
@@ -154,3 +155,11 @@ class MailingSendView(View):
 @method_decorator(cache_control(public=True, max_age=300), name='dispatch')
 class StatisticsView(LoginRequiredMixin, TemplateView):
     template_name = 'mailings/statistics.html'
+
+
+def is_manager(user):
+    return user.groups.filter(name='Менеджеры').exists()
+
+@user_passes_test(is_manager)
+def mailing_view(request):
+    return render(request, 'mailing_app/mailing.html')
