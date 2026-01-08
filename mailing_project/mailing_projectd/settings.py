@@ -9,7 +9,9 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+import os
 
+import environ
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -75,14 +77,17 @@ WSGI_APPLICATION = 'mailing_projectd.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+env = environ.Env()
+environ.Env.read_env()
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'myprojectdb',
-        'USER': 'myprojectuser',
-        'PASSWORD': 'yourpassword',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE':env('DATABASE_ENGINE'),
+        'NAME':env('DB_NAME'),
+        'USER':env('DB_USER'),
+        'PASSWORD':env('DB_PASSWORD'),
+        'HOST':env('DB_HOST'),
+        'PORT':env('DB_PORT'),
     }
 }
 
@@ -127,7 +132,7 @@ STATIC_URL = 'static/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.CustomUser'
 
 
 CACHES = {
