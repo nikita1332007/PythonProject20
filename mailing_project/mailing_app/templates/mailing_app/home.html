@@ -82,7 +82,7 @@
         <strong>Список активных рассылок:</strong>
         <ul>
             {% for mailing in active_mailings_list %}
-                <li>{{ mailing.title }} - Статус: {{ mailing.is_active|yesno:"Активна,Неактивна" }}</li>
+                <li>{{mailing.title}} - Статус: {{mailing.is_active|yesno:"Активна,Неактивна"}}</li>
             {% empty %}
                 <li>Нет активных рассылок.</li>
             {% endfor %}
