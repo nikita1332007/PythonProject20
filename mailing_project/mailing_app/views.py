@@ -1,15 +1,19 @@
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, View
 from django.urls import reverse_lazy
-from django.shortcuts import get_object_or_404, redirect, reverse, render
+from django.shortcuts import get_object_or_404, redirect,render
 from django.utils import timezone
 from django.contrib import messages
-from django.core.mail import send_mail
 from .models import Client, Message, Mailing, MailingAttempt
 from .forms import ClientForm, MessageForm, MailingForm
+
+
+class ProfileView(TemplateView):
+    template_name = 'profile.html'
 
 
 class ClientListView(ListView):
@@ -132,24 +136,26 @@ class MailingSendView(View):
         messages.success(request, f'Рассылка #{mailing.pk} запущена для {recipients.count()} клиентов.')
         return redirect('mailings-list')
 
-    class StatisticsView(LoginRequiredMixin, TemplateView):
-        template_name = 'mailing_app/statistics.html'
 
-        def get_context_data(self, **kwargs):
-            user = self.request.user
-            data = {}
+@method_decorator(cache_control(public=True, max_age=300), name='dispatch')
+class StatisticsView(LoginRequiredMixin, TemplateView):
+    template_name = 'mailings/statistics.html'
 
-            mailings = Mailing.objects.filter(owner=user)
+    def get_context_data(self, **kwargs):
+        user = self.request.user
+        data = {}
 
-            data['total_mailings'] = mailings.count()
+        mailings = Mailing.objects.filter(owner=user)
 
-            attempts = MailingAttempt.objects.filter(mailing__in=mailings)
-            data['success_attempts'] = attempts.filter(status='Успешно').count()
-            data['failed_attempts'] = attempts.filter(status='Не успешно').count()
+        data['total_mailings'] = mailings.count()
 
-            data['messages_sent'] = data['success_attempts']
+        attempts = MailingAttempt.objects.filter(mailing__in=mailings)
+        data['success_attempts'] = attempts.filter(status='Успешно').count()
+        data['failed_attempts'] = attempts.filter(status='Не успешно').count()
 
-            return data
+        data['messages_sent'] = data['success_attempts']
+
+        return data
 
 
 @method_decorator(cache_control(public=True, max_age=300), name='dispatch')
@@ -163,3 +169,15 @@ def is_manager(user):
 @user_passes_test(is_manager)
 def mailing_view(request):
     return render(request, 'mailing_app/mailing.html')
+
+
+def mailing_form(request):
+    if request.method == 'POST':
+        form = MailingForm(request.POST)
+        if form.is_valid():
+            mailing = form.save()
+            messages.success(request, 'Рассылка успешно создана!')
+            return redirect('mailings-list')
+    else:
+        form = MailingForm()
+    return render(request, 'mailing_app/mailing_form.html', {'form': form})

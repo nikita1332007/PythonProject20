@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Главная страница</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Главная страница{% endblock %}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,10 +28,37 @@
             margin-top: 10px;
             border-radius: 5px;
         }
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 15px;
+        }
     </style>
 </head>
 <body>
     <h1>Главная страница</h1>
+
+    <nav>
+        <ul>
+            <li><a href="{% url 'home' %}">Главная</a></li>
+            <li><a href="{% url 'profile' %}">Профиль</a></li>
+            <li><a href="{% url 'statistics' %}">Статистика</a></li>
+        </ul>
+    </nav>
 
     <div class="stats">
         <strong>Общее количество всех созданных рассылок:</strong> {{ total_mailings }}
@@ -38,7 +66,6 @@
 
     <div class="stats">
         <strong>Количество активных рассылок:</strong> {{ active_mailings }}
-
         <div class="timeline">
             Время: [----Прошлое----] [{{ start_time }}]=====РАБОТА=====[{{ end_time }}] [----Будущее----]
         </div>
@@ -50,5 +77,25 @@
     <div class="stats">
         <strong>Количество уникальных получателей:</strong> {{ total_recipients }}
     </div>
+
+    <div class="stats">
+        <strong>Список активных рассылок:</strong>
+        <ul>
+            {% for mailing in active_mailings_list %}
+                <li>{{ mailing.title }} - Статус: {{ mailing.is_active|yesno:"Активна,Неактивна" }}</li>
+            {% empty %}
+                <li>Нет активных рассылок.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="stats">
+        <a href="{% url 'create_mailing' %}" class="btn">Создать новую рассылку</a>
+    </div>
+
+    <div class="stats">
+        <strong>Последнее обновление:</strong> {{ last_updated }}
+    </div>
+
 </body>
 </html>
