@@ -32,12 +32,20 @@ class Mailing(models.Model):
     recipients = models.ManyToManyField(Client)
 
     def clean(self):
-        # Проверяем, что start_time не в прошлом
+        super().clean()
+
+        if self.start_time is None or self.end_time is None:
+            raise ValidationError('Время начала и окончания должно быть установлено.')
+
         if self.start_time < timezone.now():
             raise ValidationError({'start_time': 'Дата и время начала не могут быть в прошлом.'})
 
         if self.start_time >= self.end_time:
-            raise ValidationError({'end_time': 'Дата и время окончания должна быть позже даты начала.'})
+            raise ValidationError({'end_time': 'Дата и время окончания должны быть позже даты начала.'})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     @property
     def status(self):

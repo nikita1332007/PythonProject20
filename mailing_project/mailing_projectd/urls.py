@@ -1,5 +1,5 @@
 """
-URL configuration for mailing_project project.
+URL configuration for mailing_projectd project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/6.0/topics/http/urls/
@@ -22,7 +22,6 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('mailing_app.urls')),
-    path('accounts/', include('users.urls')),
     path('accounts/', include('users.urls')),
     path('login/', LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),

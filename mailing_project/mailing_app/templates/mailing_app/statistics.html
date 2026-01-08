@@ -1,14 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика рассылок</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
 <h2>Статистика рассылок пользователя {{ request.user.username }}</h2>
 <p>Всего рассылок: {{ total_mailings }}</p>
 <p>Успешных попыток: {{ success_attempts }}</p>
 <p>Неуспешных попыток: {{ failed_attempts }}</p>
 <p>Отправлено сообщений: {{ messages_sent }}</p>
-</head>
-<body>
 
 </body>
 </html>
