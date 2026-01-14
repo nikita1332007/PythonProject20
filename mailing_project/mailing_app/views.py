@@ -1,6 +1,9 @@
+from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
+from django.db.models import Min, Max
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, View
@@ -9,94 +12,84 @@ from django.shortcuts import get_object_or_404, redirect,render
 from django.utils import timezone
 from django.contrib import messages
 from .models import Client, Message, Mailing, MailingAttempt
-from .forms import ClientForm, MessageForm, MailingForm
+from .forms import ClientForm, MessageForm, MailingForm, SignUpForm
 
 
 class ProfileView(TemplateView):
     template_name = 'profile.html'
 
-
 class ClientListView(ListView):
     model = Client
     paginate_by = 20
 
-
 class ClientCreateView(CreateView):
     model = Client
     form_class = ClientForm
-    success_url = reverse_lazy('clients-list')
-
+    success_url = reverse_lazy('mailing_app:clients-list')
 
 class ClientUpdateView(UpdateView):
     model = Client
     form_class = ClientForm
-    success_url = reverse_lazy('clients-list')
-
+    success_url = reverse_lazy('mailing_app:clients-list')
 
 class ClientDeleteView(DeleteView):
     model = Client
-    success_url = reverse_lazy('clients-list')
-
+    success_url = reverse_lazy('mailing_app:clients-list')
 
 class MessageListView(ListView):
     model = Message
     paginate_by = 20
 
-
 class MessageCreateView(CreateView):
     model = Message
     form_class = MessageForm
-    success_url = reverse_lazy('messages-list')
-
+    success_url = reverse_lazy('mailing_app:messages-list')
 
 class MessageUpdateView(UpdateView):
     model = Message
     form_class = MessageForm
-    success_url = reverse_lazy('messages-list')
-
+    success_url = reverse_lazy('mailing_app:messages-list')
 
 class MessageDeleteView(DeleteView):
     model = Message
-    success_url = reverse_lazy('messages-list')
-
+    success_url = reverse_lazy('mailing_app:messages-list')
 
 class MailingListView(ListView):
     model = Mailing
     paginate_by = 20
 
-
 class MailingCreateView(CreateView):
     model = Mailing
     form_class = MailingForm
-    success_url = reverse_lazy('mailings-list')
-
+    success_url = reverse_lazy('mailing_app:mailings-list')
 
 class MailingUpdateView(UpdateView):
     model = Mailing
     form_class = MailingForm
-    success_url = reverse_lazy('mailings-list')
-
+    success_url = reverse_lazy('mailing_app:mailings-list')
 
 class MailingDeleteView(DeleteView):
     model = Mailing
-    success_url = reverse_lazy('mailings-list')
-
+    success_url = reverse_lazy('mailing_app:mailings-list')
 
 class HomePageView(TemplateView):
     template_name = 'mailing_app/home.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        all_mailings_count = Mailing.objects.count()
         now = timezone.now()
-        active_mailings_count = Mailing.objects.filter(start_time__lte=now, end_time__gte=now).count()
-        unique_clients_count = Client.objects.count()
+        all_mailings = Mailing.objects.all()
+        active_mailings = Mailing.objects.filter(start_time__lte=now, end_time__gte=now)
+        total_recipients = Client.objects.count()
 
         context.update({
-            'all_mailings_count': all_mailings_count,
-            'active_mailings_count': active_mailings_count,
-            'unique_clients_count': unique_clients_count,
-            'now': now,
+            'all_mailings_count': all_mailings.count(),
+            'active_mailings_count': active_mailings.count(),
+            'start_time': active_mailings.aggregate(min_start=Min('start_time'))['min_start'],
+            'end_time': active_mailings.aggregate(max_end=Max('end_time'))['max_end'],
+            'total_recipients': total_recipients,
+            'active_mailings_list': active_mailings,
+            'last_updated': now,
         })
         return context
 
@@ -107,7 +100,7 @@ class MailingSendView(View):
         now = timezone.now()
         if not (mailing.start_time <= now <= mailing.end_time):
             messages.error(request, 'Отправка разрешена только между start_time и end_time.')
-            return redirect('mailings-list')
+            return redirect('mailing_app:mailings-list')
 
         recipients = mailing.recipients.all()
         message_obj = mailing.message
@@ -129,13 +122,13 @@ class MailingSendView(View):
 
             MailingAttempt.objects.create(
                 mailing=mailing,
+                client=client,
                 status=status,
                 server_response=server_response,
             )
 
         messages.success(request, f'Рассылка #{mailing.pk} запущена для {recipients.count()} клиентов.')
-        return redirect('mailings-list')
-
+        return redirect('mailing_app:mailings-list')
 
 @method_decorator(cache_control(public=True, max_age=300), name='dispatch')
 class StatisticsView(LoginRequiredMixin, TemplateView):
@@ -143,25 +136,18 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         user = self.request.user
-        data = {}
-
+        context = super().get_context_data(**kwargs)
         mailings = Mailing.objects.filter(owner=user)
 
-        data['total_mailings'] = mailings.count()
+        context['total_mailings'] = mailings.count()
 
         attempts = MailingAttempt.objects.filter(mailing__in=mailings)
-        data['success_attempts'] = attempts.filter(status='Успешно').count()
-        data['failed_attempts'] = attempts.filter(status='Не успешно').count()
+        context['success_attempts'] = attempts.filter(status='Успешно').count()
+        context['failed_attempts'] = attempts.filter(status='Не успешно').count()
 
-        data['messages_sent'] = data['success_attempts']
+        context['messages_sent'] = context['success_attempts']
 
-        return data
-
-
-@method_decorator(cache_control(public=True, max_age=300), name='dispatch')
-class StatisticsView(LoginRequiredMixin, TemplateView):
-    template_name = 'mailings/statistics.html'
-
+        return context
 
 def is_manager(user):
     return user.groups.filter(name='Менеджеры').exists()
@@ -170,14 +156,33 @@ def is_manager(user):
 def mailing_view(request):
     return render(request, 'mailing_app/mailing.html')
 
-
 def mailing_form(request):
     if request.method == 'POST':
         form = MailingForm(request.POST)
         if form.is_valid():
-            mailing = form.save()
+            form.save()
             messages.success(request, 'Рассылка успешно создана!')
-            return redirect('mailings-list')
+            return redirect('mailing_app:mailings-list')
     else:
         form = MailingForm()
     return render(request, 'mailing_app/mailing_form.html', {'form': form})
+
+
+class ProfileView(TemplateView):
+    template_name = 'mailing_app/profile.html'
+
+
+def signup_view(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(request, username=username, password=raw_password)
+            if user is not None:
+                login(request, user)
+                return redirect('home')
+    else:
+        form = SignUpForm()
+    return render(request, 'signup.html', {'form': form})

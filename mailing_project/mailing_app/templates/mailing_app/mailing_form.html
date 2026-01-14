@@ -1,18 +1,64 @@
 <!DOCTYPE html>
-   <html lang="en">
-   <head>
-       <meta charset="UTF-8">
-       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-       <title>Mailing Form</title>
-   </head>
-   <body>
-       <h1>Mailing Form</h1>
-       <form method="POST">
-           {% csrf_token %}
-           <label for="email">Email:</label>
-           <input type="email" id="email" name="email" required>
-           <br>
-           <input type="submit" value="Submit">
-       </form>
-   </body>
-   </html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Форма добавления Email</title>
+    <style>
+        .error-message {
+            color: red;
+            margin-bottom: 5px;
+        }
+        .error-input {
+            border: 2px solid red;
+        }
+        .message {
+            background-color: #e0ffe0;
+            border: 1px solid #00aa00;
+            padding: 10px;
+            margin-bottom: 10px;
+            color: #006600;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="email"], input[type="submit"] {
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="message">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  {% if form.email.errors %}
+    <div class="error-message">{{ form.email.errors|join:", " }}</div>
+    <label for="{{ form.email.id_for_label }}">Email</label><br>
+    <input type="email"
+           name="{{ form.email.html_name }}"
+           id="{{ form.email.id_for_label }}"
+           class="error-input"
+           value="{{ form.email.value|default_if_none:'' }}"
+           required><br>
+  {% else %}
+    <label for="{{ form.email.id_for_label }}">Email</label><br>
+    {{ form.email }}<br>
+  {% endif %}
+
+  <input type="submit" value="Добавить">
+</form>
+
+</body>
+</html>
