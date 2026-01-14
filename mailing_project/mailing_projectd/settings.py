@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os
-
 import environ
 from pathlib import Path
 
@@ -41,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'mailing_app',
     'users',
+    'rest_framework',
+    'django.contrib.sites',
 ]
 
 MIDDLEWARE = [
@@ -58,7 +59,7 @@ ROOT_URLCONF = 'mailing_projectd.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -82,12 +83,12 @@ environ.Env.read_env()
 
 DATABASES = {
     'default': {
-        'ENGINE':env('DATABASE_ENGINE'),
-        'NAME':env('DB_NAME'),
-        'USER':env('DB_USER'),
-        'PASSWORD':env('DB_PASSWORD'),
-        'HOST':env('DB_HOST'),
-        'PORT':env('DB_PORT'),
+        'ENGINE': env('DATABASE_ENGINE', default='django.db.backends.sqlite3'),
+        'NAME': env('DB_NAME', default='db.sqlite3'),
+        'USER': env('DB_USER', default=''),
+        'PASSWORD': env('DB_PASSWORD', default=''),
+        'HOST': env('DB_HOST', default=''),
+        'PORT': env('DB_PORT', default=''),
     }
 }
 
@@ -141,3 +142,6 @@ CACHES = {
         'LOCATION': 'mailing-cache',
     }
 }
+
+
+SITE_ID = 1

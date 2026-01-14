@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Регистрация</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .signup-container {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            width: 320px;
+            box-sizing: border-box;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        form > div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #007bff;
+        }
+        .errorlist {
+            color: #e74c3c;
+            font-size: 0.85em;
+            margin-top: 4px;
+            list-style-type: none;
+            padding-left: 0;
+        }
+        button {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .login-text {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .login-text a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .login-text a:hover {
+            text-decoration: underline;
+        }
+        .messages {
+            margin-bottom: 15px;
+            color: green;
+            font-weight: 600;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="signup-container">
+    <h2>Регистрация</h2>
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+    <p class="login-text">
+        Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a>
+    </p>
+</div>
+</body>
+</html>

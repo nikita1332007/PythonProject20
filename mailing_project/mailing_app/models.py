@@ -15,14 +15,12 @@ class Client(models.Model):
     def __str__(self):
         return f'{self.full_name} <{self.email}>'
 
-
 class Message(models.Model):
     subject = models.CharField(max_length=255)
     body = models.TextField()
 
     def __str__(self):
         return self.subject
-
 
 class Mailing(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mailings')
@@ -33,7 +31,6 @@ class Mailing(models.Model):
 
     def clean(self):
         super().clean()
-
         if self.start_time is None or self.end_time is None:
             raise ValidationError('Время начала и окончания должно быть установлено.')
 
@@ -60,15 +57,10 @@ class Mailing(models.Model):
     def __str__(self):
         return f'Рассылка #{self.pk} ({self.status})'
 
-
-    def __str__(self):
-        return f'Рассылка #{self.pk} ({self.status})'
-
-
 class MailingAttempt(models.Model):
     STATUS_CHOICES = [
-        ('Успешно', 'Успешно'),
-        ('Не успешно', 'Не успешно'),
+        ('success', 'Успешно'),
+        ('failed', 'Не успешно'),
     ]
 
     mailing = models.ForeignKey(Mailing, on_delete=models.CASCADE, related_name='attempts')
@@ -77,4 +69,4 @@ class MailingAttempt(models.Model):
     server_response = models.TextField(blank=True)
 
     def __str__(self):
-        return f'Попытка #{self.pk} рассылки #{self.mailing.pk} – {self.status} в {self.attempt_time}'
+        return f'Попытка #{self.pk} рассылки #{self.mailing.pk} – {self.get_status_display()} в {self.attempt_time}'
