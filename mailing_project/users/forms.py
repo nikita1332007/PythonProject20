@@ -3,8 +3,9 @@ from django import forms
 from .models import CustomUser
 
 class CustomUserCreationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-
     class Meta:
         model = CustomUser
-        fields = ('email', 'password1', 'password2')
+        fields = ('email',)
+        widgets = {
+            'email': forms.EmailInput(attrs={'placeholder': 'Введите вашу электронную почту'}),
+        }

@@ -1,7 +1,7 @@
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.decorators import user_passes_test
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
 from django.db.models import Min, Max
 from django.utils.decorators import method_decorator
@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect,render
 from django.utils import timezone
 from django.contrib import messages
 from .models import Client, Message, Mailing, MailingAttempt
-from .forms import ClientForm, MessageForm, MailingForm, SignUpForm
+from .forms import ClientForm, MessageForm, MailingForm, SignUpForm, EmailAuthenticationForm
 
 
 class ProfileView(TemplateView):
@@ -58,10 +58,14 @@ class MailingListView(ListView):
     model = Mailing
     paginate_by = 20
 
-class MailingCreateView(CreateView):
+class MailingCreateView(LoginRequiredMixin, CreateView):
     model = Mailing
     form_class = MailingForm
-    success_url = reverse_lazy('mailing_app:mailings-list')
+    success_url = reverse_lazy('mailing_app:statistics')
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
 
 class MailingUpdateView(UpdateView):
     model = Mailing
@@ -132,7 +136,7 @@ class MailingSendView(View):
 
 @method_decorator(cache_control(public=True, max_age=300), name='dispatch')
 class StatisticsView(LoginRequiredMixin, TemplateView):
-    template_name = 'mailings/statistics.html'
+    template_name = 'mailing_app/statistics.html'
 
     def get_context_data(self, **kwargs):
         user = self.request.user
@@ -142,8 +146,9 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         context['total_mailings'] = mailings.count()
 
         attempts = MailingAttempt.objects.filter(mailing__in=mailings)
-        context['success_attempts'] = attempts.filter(status='Успешно').count()
-        context['failed_attempts'] = attempts.filter(status='Не успешно').count()
+
+        context['success_attempts'] = attempts.filter(status='success').count()
+        context['failed_attempts'] = attempts.filter(status='failed').count()
 
         context['messages_sent'] = context['success_attempts']
 
@@ -152,19 +157,23 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
 def is_manager(user):
     return user.groups.filter(name='Менеджеры').exists()
 
-@user_passes_test(is_manager)
+@user_passes_test(lambda u: u.is_staff)
 def mailing_view(request):
     return render(request, 'mailing_app/mailing.html')
 
-def mailing_form(request):
+@login_required
+def mailing_create(request):
     if request.method == 'POST':
         form = MailingForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Рассылка успешно создана!')
-            return redirect('mailing_app:mailings-list')
+            mailing = form.save(commit=False)
+            mailing.owner = request.user
+            mailing.save()
+            form.save_m2m()
+            messages.success(request, '✅ Рассылка создана!')
+            return redirect('mailing_app:statistics')
     else:
-        form = MailingForm()
+        form =MailingForm()
     return render(request, 'mailing_app/mailing_form.html', {'form': form})
 
 
@@ -176,13 +185,19 @@ def signup_view(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            username = form.cleaned_data.get('username')
+            form.save()
+            email = form.cleaned_data.get('email')
             raw_password = form.cleaned_data.get('password1')
-            user = authenticate(request, username=username, password=raw_password)
+            user = authenticate(request, username=email, password=raw_password)
             if user is not None:
                 login(request, user)
-                return redirect('home')
+                return redirect('mailing_app:home')
     else:
         form = SignUpForm()
-    return render(request, 'signup.html', {'form': form})
+
+    return render(request, 'mailing_app/signup.html', {'form': form})
+
+
+class UserLoginView(LoginView):
+    authentication_form = EmailAuthenticationForm
+    template_name = 'mailing_app/login.html'
