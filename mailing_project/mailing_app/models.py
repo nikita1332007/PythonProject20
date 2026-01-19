@@ -4,8 +4,6 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 
-
-
 class Client(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='clients')
     email = models.EmailField(unique=True)
@@ -23,13 +21,26 @@ class Message(models.Model):
         return self.subject
 
 class Mailing(models.Model):
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mailings')
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    message = models.ForeignKey(Message, on_delete=models.CASCADE)
-    recipients = models.ManyToManyField(Client)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name='Владелец'
+    )
+    email = models.EmailField('Email отправителя')
+    start_time = models.DateTimeField('Время начала')
+    end_time = models.DateTimeField('Время окончания')
+    message = models.TextField('Сообщение')
+    recipients = models.ManyToManyField(
+        Client,
+        verbose_name='Получатели',
+        blank=False
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
+        from django.core.exceptions import ValidationError
+        from django.utils import timezone
         super().clean()
         if self.start_time is None or self.end_time is None:
             raise ValidationError('Время начала и окончания должно быть установлено.')
@@ -46,6 +57,7 @@ class Mailing(models.Model):
 
     @property
     def status(self):
+        from django.utils import timezone
         now = timezone.now()
         if now < self.start_time:
             return 'Создана'
